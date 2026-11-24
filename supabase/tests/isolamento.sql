@@ -153,12 +153,19 @@ select test.ok(test.falha(format($q$select public.convidar_usuario(%L, 'x@x.com'
 select test.ok(test.falha(format($q$select public.definir_status_assinatura(%L, 'ativa')$q$, :'empresa_b')),
   'dono não usa função de super-admin');
 select test.ok(test.falha('select * from public.admin_listar_empresas()'), 'dono não lista todas as empresas');
+select test.ok(test.falha($q$select * from public.admin_criar_empresa('X', 'salao', 'premium', 'x@x.com')$q$), 'dono não usa admin_criar_empresa');
+select test.ok(test.falha('select * from public.admin_historico()'), 'dono não lê o histórico da plataforma');
 reset role;
 
 -- ---------------------------------------------------------------- Admin bloqueia A
 select set_config('request.jwt.claims', json_build_object('sub', :'ADMIN')::text, true);
 set local role authenticated;
 select test.ok((select count(*) from public.empresas) = 2, 'admin vê todas as empresas');
+select empresa_id as empresa_c, token as conv_c from public.admin_criar_empresa('Estética C', 'estetica', 'premium', 'DonoC@teste.com', 'Matriz') \gset
+select test.ok((select count(*) from public.unidades where empresa_id = :'empresa_c') = 1, 'admin cria empresa com unidade');
+select test.ok((select convite_pendente from public.admin_listar_empresas() where id = :'empresa_c') = 'donoc@teste.com', 'convite do dono fica pendente');
+select test.ok((select count(*) from public.admin_historico()) >= 3, 'admin lê o histórico');
+select test.ok(not test.falha(format($q$insert into public.servicos (empresa_id, nome, duracao_min) values (%L, 'Admin', 30)$q$, :'empresa_a')), 'admin grava na empresa de um cliente (ver como cliente)');
 select public.definir_status_assinatura(:'empresa_a', 'bloqueada');
 reset role;
 

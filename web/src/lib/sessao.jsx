@@ -5,10 +5,18 @@ const SessaoCtx = createContext(null)
 export const useSessao = () => useContext(SessaoCtx)
 
 const CHAVE_EMPRESA = 'sc_empresa_atual'
+const CHAVE_MODO = 'sc_modo_painel' // por sessão do navegador: 'admin' | 'cliente'
+const SELECT_EMPRESA = 'id, nome, segmento, status_assinatura, teste_ate, logo_url, cor_marca, plano:planos(*)'
 export const CHAVE_CONVITE = 'sc_convite_pendente'
 
 function ler(chave) {
   try { return localStorage.getItem(chave) } catch { return null }
+}
+function lerSessao(chave) {
+  try { return sessionStorage.getItem(chave) } catch { return null }
+}
+function gravarSessao(chave, valor) {
+  try { valor == null ? sessionStorage.removeItem(chave) : sessionStorage.setItem(chave, valor) } catch { /* sem storage */ }
 }
 function gravar(chave, valor) {
   try { valor == null ? localStorage.removeItem(chave) : localStorage.setItem(chave, valor) } catch { /* sem storage */ }
@@ -26,6 +34,9 @@ export function ProvedorSessao({ children }) {
   const [superAdmin, setSuperAdmin] = useState(false)
   const [empresaId, setEmpresaIdEstado] = useState(() => ler(CHAVE_EMPRESA))
   const [perfil, setPerfil] = useState(null)
+  const [modo, setModoEstado] = useState(() => lerSessao(CHAVE_MODO))
+  const [empresaAdmin, setEmpresaAdmin] = useState(null) // empresa aberta pelo super-admin sem ser membro
+  const [empresaAdminFalhou, setEmpresaAdminFalhou] = useState(null)
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSessao(data.session ?? null))
@@ -58,7 +69,7 @@ export function ProvedorSessao({ children }) {
       supabase
         .from('membros')
         .select(
-          'id, papel, todas_unidades, empresa:empresas(id, nome, segmento, status_assinatura, teste_ate, logo_url, cor_marca, plano:planos(*))',
+          `id, papel, todas_unidades, empresa:empresas(${SELECT_EMPRESA})`,
         )
         .eq('user_id', usuario.id)
         .eq('ativo', true)
@@ -101,20 +112,53 @@ export function ProvedorSessao({ children }) {
     setEmpresaIdEstado(id)
   }, [])
 
+  const setModo = useCallback((m) => {
+    gravarSessao(CHAVE_MODO, m)
+    setModoEstado(m)
+  }, [])
+
+  // super-admin abrindo uma empresa da qual não é membro ("ver como cliente")
+  useEffect(() => {
+    if (!superAdmin || !empresaId || !vinculos || vinculos.some((v) => v.empresa.id === empresaId)) {
+      setEmpresaAdmin(null)
+      return
+    }
+    supabase.from('empresas').select(SELECT_EMPRESA).eq('id', empresaId).maybeSingle()
+      .then(({ data }) => {
+        setEmpresaAdmin(data ?? null)
+        if (!data) setEmpresaAdminFalhou(empresaId)
+      })
+  }, [superAdmin, empresaId, vinculos])
+
   // empresa atual: a escolhida, ou a única que o usuário tem
   const vinculo = useMemo(() => {
+    if (empresaAdmin && empresaAdmin.id === empresaId) {
+      return { id: null, papel: 'dono', todas_unidades: true, comoAdmin: true, empresa: empresaAdmin }
+    }
     if (!vinculos?.length) return null
     return vinculos.find((v) => v.empresa.id === empresaId) ?? (vinculos.length === 1 ? vinculos[0] : null)
-  }, [vinculos, empresaId])
+  }, [vinculos, empresaId, empresaAdmin])
 
   const sair = useCallback(async () => {
     await supabase.auth.signOut()
     gravar(CHAVE_EMPRESA, null)
+    gravarSessao(CHAVE_MODO, null)
     setEmpresaIdEstado(null)
+    setModoEstado(null)
   }, [])
 
+  const recarregarTudo = useCallback(async () => {
+    await carregar()
+    if (empresaAdmin) {
+      const { data } = await supabase.from('empresas').select(SELECT_EMPRESA).eq('id', empresaAdmin.id).maybeSingle()
+      setEmpresaAdmin(data ?? null)
+    }
+  }, [carregar, empresaAdmin])
+
   const valor = {
-    carregando: sessao === undefined || (usuario && vinculos === null),
+    carregando: sessao === undefined || (usuario && vinculos === null)
+      || !!(superAdmin && empresaId && vinculos && !vinculos.some((v) => v.empresa.id === empresaId)
+        && empresaAdmin?.id !== empresaId && empresaAdminFalhou !== empresaId),
     sessao,
     usuario,
     perfil,
@@ -126,7 +170,10 @@ export function ProvedorSessao({ children }) {
     papel: vinculo?.papel ?? null,
     eDono: vinculo?.papel === 'dono' || superAdmin,
     setEmpresaId,
-    recarregar: carregar,
+    recarregar: recarregarTudo,
+    modo,
+    setModo,
+    comoAdmin: !!vinculo?.comoAdmin,
     recuperandoSenha,
     setRecuperandoSenha,
     sair,

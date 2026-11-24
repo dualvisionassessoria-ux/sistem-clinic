@@ -1,22 +1,61 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
-import { Home, MapPin, UserRound, Scissors, Users, Building2, LogOut, Shield, ArrowLeftRight, CalendarDays } from 'lucide-react'
+import {
+  Home, MapPin, UserRound, Scissors, Users, Building2, LogOut, Shield, ArrowLeftRight, CalendarDays,
+  ContactRound, MessageCircle, Wallet, BarChart3, LayoutDashboard, Layers, CreditCard, History, Menu as IconeMenu, Eye,
+} from 'lucide-react'
 import { useSessao } from '../lib/sessao.jsx'
 import { diasRestantes } from '../lib/formato.js'
 import { Logo, cx } from './ui.jsx'
 
-function itensMenu(eDono) {
-  const itens = [
-    { para: '/', rotulo: 'Início', icone: Home, fim: true },
-    { para: '/unidades', rotulo: 'Unidades', icone: MapPin },
-    { para: '/profissionais', rotulo: 'Profissionais', icone: UserRound },
-    { para: '/servicos', rotulo: 'Serviços', icone: Scissors },
+/** Menu do cliente, agrupado por frente de trabalho. `breve` = módulo das próximas etapas. */
+export function gruposCliente(eDono) {
+  return [
+    {
+      titulo: 'Atendimento',
+      itens: [
+        { para: '/', rotulo: 'Início', icone: Home, fim: true },
+        { rotulo: 'Agenda', icone: CalendarDays, breve: true },
+        { rotulo: 'Pacientes', icone: ContactRound, breve: true },
+      ],
+    },
+    {
+      titulo: 'Rotina',
+      itens: [{ rotulo: 'WhatsApp', icone: MessageCircle, breve: true }],
+    },
+    {
+      titulo: 'Gestão',
+      itens: [
+        { rotulo: 'Financeiro', icone: Wallet, breve: true },
+        { rotulo: 'Relatórios', icone: BarChart3, breve: true },
+      ],
+    },
+    {
+      titulo: 'Cadastros',
+      itens: [
+        { para: '/unidades', rotulo: 'Unidades', icone: MapPin },
+        { para: '/profissionais', rotulo: 'Profissionais', icone: UserRound },
+        { para: '/servicos', rotulo: 'Serviços', icone: Scissors },
+        ...(eDono ? [
+          { para: '/equipe', rotulo: 'Equipe', icone: Users },
+          { para: '/empresa', rotulo: 'Minha empresa', icone: Building2 },
+        ] : []),
+      ],
+    },
   ]
-  if (eDono) {
-    itens.push({ para: '/equipe', rotulo: 'Equipe', icone: Users })
-    itens.push({ para: '/empresa', rotulo: 'Empresa', icone: Building2 })
-  }
-  return itens
 }
+
+const GRUPOS_ADMIN = [
+  {
+    titulo: 'Plataforma',
+    itens: [
+      { para: '/admin', rotulo: 'Visão geral', curto: 'Geral', icone: LayoutDashboard, fim: true },
+      { para: '/admin/empresas', rotulo: 'Empresas', icone: Building2 },
+      { para: '/admin/assinaturas', rotulo: 'Assinaturas', icone: CreditCard },
+      { para: '/admin/planos', rotulo: 'Planos', icone: Layers },
+      { para: '/admin/historico', rotulo: 'Histórico', icone: History },
+    ],
+  },
+]
 
 function AvisoAssinatura({ empresa }) {
   if (!empresa) return null
@@ -40,65 +79,94 @@ function AvisoAssinatura({ empresa }) {
   return null
 }
 
+function ItemLateral({ item }) {
+  if (item.breve) {
+    return (
+      <div className="flex items-center gap-3 rounded-xl px-3 py-2 text-sm text-slate-400">
+        <item.icone className="size-[18px]" /> {item.rotulo}
+        <span className="ml-auto rounded-full bg-slate-100 px-2 text-[10px] font-medium">em breve</span>
+      </div>
+    )
+  }
+  return (
+    <NavLink
+      to={item.para}
+      end={item.fim}
+      className={({ isActive }) =>
+        cx(
+          'flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition',
+          isActive ? 'bg-marca-700 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100',
+        )
+      }
+    >
+      <item.icone className="size-[18px]" />
+      {item.rotulo}
+    </NavLink>
+  )
+}
+
 export default function Layout({ admin, children }) {
   const s = useSessao()
   const navegar = useNavigate()
-  const itens = admin ? [{ para: '/admin', rotulo: 'Empresas', icone: Shield, fim: true }] : itensMenu(s.eDono)
-  // no celular o menu inferior mostra até 5 itens
-  const itensCelular = itens.slice(0, 5)
+  const grupos = admin ? GRUPOS_ADMIN : gruposCliente(s.eDono)
+
+  const itensCelular = admin
+    ? GRUPOS_ADMIN[0].itens
+    : [
+        { para: '/', rotulo: 'Início', icone: Home, fim: true },
+        { para: '/unidades', rotulo: 'Unidades', icone: MapPin },
+        { para: '/profissionais', rotulo: 'Profissionais', icone: UserRound },
+        { para: '/servicos', rotulo: 'Serviços', icone: Scissors },
+        { para: '/menu', rotulo: 'Mais', icone: IconeMenu },
+      ]
 
   const sair = async () => {
     await s.sair()
     navegar('/entrar')
   }
+  const irParaAdmin = () => {
+    s.setModo('admin')
+    navegar('/admin')
+  }
+  const irParaCliente = () => navegar('/escolher-painel')
 
   return (
     <div className="min-h-full md:flex">
       {/* ----- menu lateral (computador) */}
-      <aside className="hidden md:flex md:w-64 md:shrink-0 md:flex-col md:border-r md:border-slate-200 md:bg-white">
+      <aside className="hidden md:sticky md:top-0 md:flex md:h-dvh md:w-64 md:shrink-0 md:flex-col md:border-r md:border-slate-200 md:bg-white">
         <div className="px-5 py-5">
           <Logo />
+          {admin && <p className="mt-1 text-xs font-medium uppercase tracking-wide text-marca-700">Painel da plataforma</p>}
         </div>
         {!admin && s.empresa && (
-          <div className="mx-3 mb-3 rounded-2xl bg-marca-50 px-4 py-3">
-            <p className="text-xs text-marca-700">Empresa</p>
+          <div className="mx-3 mb-2 rounded-2xl bg-marca-50 px-4 py-3">
+            <p className="text-xs text-marca-700">{s.comoAdmin ? 'Vendo como cliente' : 'Empresa'}</p>
             <p className="truncate font-semibold text-slate-900">{s.empresa.nome}</p>
             <p className="text-xs text-slate-500">Plano {s.plano?.nome}</p>
           </div>
         )}
-        <nav className="flex-1 space-y-1 px-3">
-          {itens.map((i) => (
-            <NavLink
-              key={i.para}
-              to={i.para}
-              end={i.fim}
-              className={({ isActive }) =>
-                cx(
-                  'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition',
-                  isActive ? 'bg-marca-700 text-white' : 'text-slate-600 hover:bg-slate-100',
-                )
-              }
-            >
-              <i.icone className="size-5" />
-              {i.rotulo}
-            </NavLink>
+        <nav className="flex-1 space-y-4 overflow-y-auto px-3 pb-3">
+          {grupos.map((g) => (
+            <div key={g.titulo}>
+              <p className="px-3 pb-1 text-[11px] font-semibold uppercase tracking-wider text-slate-400">{g.titulo}</p>
+              <div className="space-y-0.5">
+                {g.itens.map((i) => <ItemLateral key={i.rotulo} item={i} />)}
+              </div>
+            </div>
           ))}
-          {!admin && <div className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-slate-400">
-            <CalendarDays className="size-5" /> Agenda <span className="ml-auto rounded-full bg-slate-100 px-2 text-[10px]">em breve</span>
-          </div>}
         </nav>
-        <div className="space-y-1 border-t border-slate-100 p-3">
+        <div className="space-y-0.5 border-t border-slate-100 p-3">
           {s.superAdmin && !admin && (
-            <NavLink to="/admin" className="flex items-center gap-3 rounded-xl px-3 py-2 text-sm text-slate-600 hover:bg-slate-100">
+            <button onClick={irParaAdmin} className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm text-slate-600 hover:bg-slate-100">
               <Shield className="size-4" /> Painel da plataforma
-            </NavLink>
+            </button>
           )}
-          {admin && s.vinculos.length > 0 && (
-            <NavLink to="/" className="flex items-center gap-3 rounded-xl px-3 py-2 text-sm text-slate-600 hover:bg-slate-100">
-              <Building2 className="size-4" /> Voltar para a empresa
-            </NavLink>
+          {s.superAdmin && admin && (
+            <button onClick={irParaCliente} className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm text-slate-600 hover:bg-slate-100">
+              <Eye className="size-4" /> Ver como cliente
+            </button>
           )}
-          {s.vinculos.length > 1 && !admin && (
+          {!s.superAdmin && s.vinculos.length > 1 && (
             <NavLink to="/escolher-empresa" className="flex items-center gap-3 rounded-xl px-3 py-2 text-sm text-slate-600 hover:bg-slate-100">
               <ArrowLeftRight className="size-4" /> Trocar empresa
             </NavLink>
@@ -111,27 +179,17 @@ export default function Layout({ admin, children }) {
       </aside>
 
       {/* ----- conteúdo */}
-      <div className="flex min-h-full flex-1 flex-col">
-        {/* topo (celular) */}
+      <div className="flex min-h-full min-w-0 flex-1 flex-col">
         <header className="sticky top-0 z-30 flex items-center justify-between border-b border-slate-200 bg-white/90 px-4 py-3 backdrop-blur md:hidden">
           <div className="min-w-0">
             <Logo className="text-base" />
           </div>
           <div className="flex items-center gap-1">
-            {s.eDono && !admin && (
-              <NavLink to="/empresa" className="rounded-full p-2 text-slate-500 hover:bg-slate-100" aria-label="Minha empresa">
-                <Building2 className="size-5" />
-              </NavLink>
-            )}
-            {s.superAdmin && !admin && (
-              <NavLink to="/admin" className="rounded-full p-2 text-slate-500 hover:bg-slate-100" aria-label="Painel da plataforma">
-                <Shield className="size-5" />
-              </NavLink>
-            )}
-            {s.vinculos.length > 1 && !admin && (
-              <NavLink to="/escolher-empresa" className="rounded-full p-2 text-slate-500 hover:bg-slate-100" aria-label="Trocar empresa">
-                <ArrowLeftRight className="size-5" />
-              </NavLink>
+            {s.superAdmin && (
+              <button onClick={admin ? irParaCliente : irParaAdmin} className="rounded-full p-2 text-slate-500 hover:bg-slate-100"
+                aria-label={admin ? 'Ver como cliente' : 'Painel da plataforma'}>
+                {admin ? <Eye className="size-5" /> : <Shield className="size-5" />}
+              </button>
             )}
             <button onClick={sair} className="rounded-full p-2 text-slate-500 hover:bg-slate-100" aria-label="Sair">
               <LogOut className="size-5" />
@@ -139,9 +197,16 @@ export default function Layout({ admin, children }) {
           </div>
         </header>
 
+        {s.comoAdmin && !admin && (
+          <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 bg-marca-800 px-4 py-2 text-center text-sm text-white">
+            <span className="flex items-center gap-1.5"><Eye className="size-4 text-agua-200" /> Você está vendo como cliente: <strong>{s.empresa?.nome}</strong></span>
+            <button onClick={irParaCliente} className="rounded-full bg-white/15 px-3 py-0.5 text-xs font-medium hover:bg-white/25">Trocar empresa</button>
+            <button onClick={irParaAdmin} className="rounded-full bg-white px-3 py-0.5 text-xs font-semibold text-marca-800 hover:bg-marca-50">Voltar ao painel</button>
+          </div>
+        )}
         {!admin && <AvisoAssinatura empresa={s.empresa} />}
 
-        <main className="mx-auto w-full max-w-5xl flex-1 px-4 pb-28 pt-5 md:px-8 md:pb-10 md:pt-8">
+        <main className="mx-auto w-full max-w-6xl flex-1 px-4 pb-28 pt-5 md:px-8 md:pb-10 md:pt-8">
           {children ?? <Outlet />}
         </main>
 
@@ -162,7 +227,7 @@ export default function Layout({ admin, children }) {
                     <span className={cx('rounded-full px-3 py-1', isActive && 'bg-marca-50')}>
                       <i.icone className="size-5" />
                     </span>
-                    {i.rotulo}
+                    {i.curto ?? i.rotulo}
                   </>
                 )}
               </NavLink>
