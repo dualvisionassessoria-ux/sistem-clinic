@@ -23,6 +23,7 @@ import Pacientes from './pages/Pacientes.jsx'
 import Paciente from './pages/Paciente.jsx'
 import Financeiro from './pages/Financeiro.jsx'
 import Relatorios from './pages/Relatorios.jsx'
+import WhatsApp from './pages/WhatsApp.jsx'
 import AdminVisaoGeral from './pages/admin/AdminVisaoGeral.jsx'
 import AdminEmpresas from './pages/admin/AdminEmpresas.jsx'
 import AdminPlanos from './pages/admin/AdminPlanos.jsx'
@@ -92,6 +93,7 @@ export default function App() {
         <Route path="pacientes/:id" element={<Paciente />} />
         <Route path="financeiro" element={<Financeiro />} />
         <Route path="relatorios" element={<Relatorios />} />
+        <Route path="whatsapp" element={<WhatsApp />} />
         <Route path="unidades" element={<Unidades />} />
         <Route path="profissionais" element={<Profissionais />} />
         <Route path="servicos" element={<Servicos />} />

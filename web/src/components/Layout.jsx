@@ -20,7 +20,7 @@ export function gruposCliente(eDono) {
     },
     {
       titulo: 'Rotina',
-      itens: [{ rotulo: 'WhatsApp', icone: MessageCircle, breve: true }],
+      itens: [{ para: '/whatsapp', rotulo: 'WhatsApp', icone: MessageCircle }],
     },
     {
       titulo: 'Gestão',

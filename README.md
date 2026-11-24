@@ -68,6 +68,22 @@ npm run dev               # abre em http://localhost:5173
 
 O `.htaccess` força HTTPS e faz as rotas do app (ex.: `/unidades`) funcionarem ao recarregar a página.
 
+## 6. Ligar o WhatsApp (Evolution API)
+
+A Evolution API só é chamada pela Edge Function `supabase/functions/whatsapp`. O navegador nunca vê a chave.
+
+1. **Banco**: rode `supabase/migrations/20261124000800_whatsapp.sql` no SQL Editor (já incluso no `instalar.sql`).
+2. **Edge Function**: Supabase → Edge Functions → *Deploy a new function* → *Via editor*, nome `whatsapp`, cole `supabase/functions/whatsapp/index.ts` e publique.
+   Depois, nos detalhes da função, **desligue "Verify JWT"** (o webhook e o agendador não mandam login; o painel é validado dentro da função).
+   Pela linha de comando: `npx supabase functions deploy whatsapp --no-verify-jwt --project-ref txnwrycavxkpyyhcpffj`.
+3. **Segredos** (Edge Functions → Secrets): `EVOLUTION_URL` (endereço do servidor, sem barra no fim) e `EVOLUTION_API_KEY` (chave global).
+   Se o servidor for da versão 1.x, crie também `EVOLUTION_VERSAO=1`.
+4. **Agendador**: rode `supabase/agendar_whatsapp.sql` no SQL Editor. Ele chama a função a cada minuto (pg_cron + pg_net) para gerar e enviar as mensagens.
+5. No sistema, o dono abre **WhatsApp → Conexão → Conectar** em cada unidade e lê o QR Code.
+
+O que roda sozinho: confirmação X horas antes (SIM/NÃO muda o status), lembrete, pós-atendimento com link de avaliação do Google (Profissional+),
+aniversário e convite de retorno (Profissional+), campanhas e marcação pelo WhatsApp (Premium). Testes: `supabase/tests/whatsapp.sql`.
+
 ## Segurança
 
 - O front usa só a chave **publishable/anon**, que é pública. A `service_role`/secret key nunca vai para o front
