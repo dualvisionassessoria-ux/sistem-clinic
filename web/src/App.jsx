@@ -18,6 +18,11 @@ import Equipe from './pages/Equipe.jsx'
 import MinhaEmpresa from './pages/MinhaEmpresa.jsx'
 import EscolherPainel from './pages/EscolherPainel.jsx'
 import Menu from './pages/Menu.jsx'
+import Agenda from './pages/Agenda.jsx'
+import Pacientes from './pages/Pacientes.jsx'
+import Paciente from './pages/Paciente.jsx'
+import Financeiro from './pages/Financeiro.jsx'
+import Relatorios from './pages/Relatorios.jsx'
 import AdminVisaoGeral from './pages/admin/AdminVisaoGeral.jsx'
 import AdminEmpresas from './pages/admin/AdminEmpresas.jsx'
 import AdminPlanos from './pages/admin/AdminPlanos.jsx'
@@ -82,6 +87,11 @@ export default function App() {
 
       <Route element={<AreaEmpresa><Layout /></AreaEmpresa>}>
         <Route index element={<Inicio />} />
+        <Route path="agenda" element={<Agenda />} />
+        <Route path="pacientes" element={<Pacientes />} />
+        <Route path="pacientes/:id" element={<Paciente />} />
+        <Route path="financeiro" element={<Financeiro />} />
+        <Route path="relatorios" element={<Relatorios />} />
         <Route path="unidades" element={<Unidades />} />
         <Route path="profissionais" element={<Profissionais />} />
         <Route path="servicos" element={<Servicos />} />

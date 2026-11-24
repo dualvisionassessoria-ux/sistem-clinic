@@ -14,8 +14,8 @@ export function gruposCliente(eDono) {
       titulo: 'Atendimento',
       itens: [
         { para: '/', rotulo: 'Início', icone: Home, fim: true },
-        { rotulo: 'Agenda', icone: CalendarDays, breve: true },
-        { rotulo: 'Pacientes', icone: ContactRound, breve: true },
+        { para: '/agenda', rotulo: 'Agenda', icone: CalendarDays },
+        { para: '/pacientes', rotulo: 'Pacientes', icone: ContactRound },
       ],
     },
     {
@@ -25,8 +25,8 @@ export function gruposCliente(eDono) {
     {
       titulo: 'Gestão',
       itens: [
-        { rotulo: 'Financeiro', icone: Wallet, breve: true },
-        { rotulo: 'Relatórios', icone: BarChart3, breve: true },
+        { para: '/financeiro', rotulo: 'Financeiro', icone: Wallet },
+        { para: '/relatorios', rotulo: 'Relatórios', icone: BarChart3 },
       ],
     },
     {
@@ -82,7 +82,7 @@ function AvisoAssinatura({ empresa }) {
 function ItemLateral({ item }) {
   if (item.breve) {
     return (
-      <div className="flex items-center gap-3 rounded-xl px-3 py-2 text-sm text-slate-400">
+      <div className="flex items-center gap-3 rounded-xl px-3 py-1.5 text-sm text-slate-400">
         <item.icone className="size-[18px]" /> {item.rotulo}
         <span className="ml-auto rounded-full bg-slate-100 px-2 text-[10px] font-medium">em breve</span>
       </div>
@@ -94,7 +94,7 @@ function ItemLateral({ item }) {
       end={item.fim}
       className={({ isActive }) =>
         cx(
-          'flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition',
+          'flex items-center gap-3 rounded-xl px-3 py-1.5 text-sm font-medium transition',
           isActive ? 'bg-marca-700 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100',
         )
       }
@@ -114,9 +114,9 @@ export default function Layout({ admin, children }) {
     ? GRUPOS_ADMIN[0].itens
     : [
         { para: '/', rotulo: 'Início', icone: Home, fim: true },
-        { para: '/unidades', rotulo: 'Unidades', icone: MapPin },
-        { para: '/profissionais', rotulo: 'Profissionais', icone: UserRound },
-        { para: '/servicos', rotulo: 'Serviços', icone: Scissors },
+        { para: '/agenda', rotulo: 'Agenda', icone: CalendarDays },
+        { para: '/pacientes', rotulo: 'Pacientes', icone: ContactRound },
+        { para: '/financeiro', rotulo: 'Caixa', icone: Wallet },
         { para: '/menu', rotulo: 'Mais', icone: IconeMenu },
       ]
 
@@ -134,7 +134,7 @@ export default function Layout({ admin, children }) {
     <div className="min-h-full md:flex">
       {/* ----- menu lateral (computador) */}
       <aside className="hidden md:sticky md:top-0 md:flex md:h-dvh md:w-64 md:shrink-0 md:flex-col md:border-r md:border-slate-200 md:bg-white">
-        <div className="px-5 py-5">
+        <div className="px-5 pb-3 pt-4">
           <Logo />
           {admin && <p className="mt-1 text-xs font-medium uppercase tracking-wide text-marca-700">Painel da plataforma</p>}
         </div>
@@ -145,7 +145,7 @@ export default function Layout({ admin, children }) {
             <p className="text-xs text-slate-500">Plano {s.plano?.nome}</p>
           </div>
         )}
-        <nav className="flex-1 space-y-4 overflow-y-auto px-3 pb-3">
+        <nav className="flex-1 space-y-3 overflow-y-auto px-3 pb-3">
           {grupos.map((g) => (
             <div key={g.titulo}>
               <p className="px-3 pb-1 text-[11px] font-semibold uppercase tracking-wider text-slate-400">{g.titulo}</p>
@@ -155,7 +155,7 @@ export default function Layout({ admin, children }) {
             </div>
           ))}
         </nav>
-        <div className="space-y-0.5 border-t border-slate-100 p-3">
+        <div className="space-y-0.5 border-t border-slate-100 px-3 py-2">
           {s.superAdmin && !admin && (
             <button onClick={irParaAdmin} className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm text-slate-600 hover:bg-slate-100">
               <Shield className="size-4" /> Painel da plataforma

@@ -27,6 +27,8 @@ export function mensagemErro(err) {
     [/User already registered/i, 'Já existe uma conta com este e-mail. Use "Entrar".'],
     [/Password should be at least/i, 'A senha precisa ter pelo menos 6 caracteres.'],
     [/rate limit|too many requests/i, 'Muitas tentativas. Aguarde um minuto e tente de novo.'],
+    [/agendamentos_sem_conflito|conflicting key value violates exclusion/i, 'Este horário já está ocupado para o profissional. Escolha outro horário ou marque como encaixe.'],
+    [/clientes_telefone_unico/i, 'Já existe um paciente com este telefone.'],
     [/duplicate key/i, 'Já existe um cadastro igual.'],
     [/violates row-level security|permission denied/i, 'Você não tem permissão para esta ação.'],
     [/violates check constraint/i, 'Algum campo tem valor inválido. Confira e tente de novo.'],
